@@ -27,8 +27,11 @@ export class AppComponent {
       this.recognition.interinmResults = false;
 
       this.recognition.onstart = () => {
-        this.isListening = true
-        this.response = "Listening...."
+        this.ngZone.run(() => {  // ✅ Ensure UI updates
+          this.isListening = true
+          this.response = "Listening...."
+        })
+        
       }
 
       this.recognition.onresult = (event:any) => {
@@ -73,7 +76,8 @@ export class AppComponent {
       return;
     }
     console.log(this.command)
-    this.http.post<{ response: string }>(`${this.FLASK_API_URL}/process_command`, {
+    // this.http.post<{ response: string }>(`http://localhost:8000/process_command`, {
+      this.http.post<{ response: string }>(`${this.FLASK_API_URL}/process_command`, {
       command: this.command
     }).subscribe(
       (res) => {this.ngZone.run(() => {  // ✅ Ensure UI updates
@@ -89,13 +93,21 @@ export class AppComponent {
     );
   }
 setresponse(res:any){
+  if(res.response && res.response['success']){
+    window.open(res.response.url,'_blank')
+    this.response =`Searching for ${res.response.searchText} on Google`
+    this.speakResponse(this.response); 
+     
+  }else{
   this.response = res.response
   console.log(this.response)
   this.speakResponse(this.response); 
   this.recognition.stop();
+  }
 }
 
 speakResponse(text: string) {
+  this.isListening = true
   if ('speechSynthesis' in window) {
     const speech = new SpeechSynthesisUtterance(text);
     speech.lang = 'en-US';  // ✅ Set language (change as needed)
@@ -104,6 +116,12 @@ speakResponse(text: string) {
     speech.volume = 1;       // ✅ Adjust volume (1 = max)
 
     window.speechSynthesis.speak(speech);
+    speech.onend = () => {
+      this.ngZone.run(() => {  // ✅ Ensure UI updates
+        this.isListening = false
+      })
+      console.log("Speech has finished.");
+    };
   } else {
     console.warn("Speech synthesis is not supported in this browser.");
   }
