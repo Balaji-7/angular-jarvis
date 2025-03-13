@@ -15,7 +15,7 @@ export class AppComponent {
   response: string = '';
   isListening: boolean = false;
   recognition: any;
-  FLASK_API_URL = "https://jarvis-flask.onrender.com";
+  FLASK_API_URL = "https://jarvisai-kp2v.onrender.com/";
 
   constructor(private http:HttpClient,private ngZone: NgZone){
     const speechRecognition = (window as any).speechRecognition || (window as any).webkitSpeechRecognition
