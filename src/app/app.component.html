@@ -6,7 +6,7 @@
     <b>Eg:-</b> Search Weather today?, what's Time now?,Wikipedia Python, open Notepad, etc...
   </p>
 
-  <button (click)="startListening()" [disabled]="isListening" class="btn">
+  <button (click)="startListening()" [disabled]="isDisable" class="btn">
     🎤 {{ isListening ? 'Listening...' : 'Click to Speak' }}
   </button>
 

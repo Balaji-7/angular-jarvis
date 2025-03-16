@@ -15,6 +15,7 @@ export class AppComponent {
   command: string = '';
   response: string = '';
   isListening: boolean = false;
+  isDisable : boolean = false;
   recognition: any;
   FLASK_API_URL = "https://jarvisai-kp2v.onrender.com/";
 
@@ -28,6 +29,7 @@ export class AppComponent {
 
       this.recognition.onstart = () => {
         this.ngZone.run(() => {  // ✅ Ensure UI updates
+          this.isDisable = true
           this.isListening = true
           this.response = "Listening...."
         })
@@ -44,11 +46,13 @@ export class AppComponent {
       this.recognition.onerror = (event:any)=>{
         console.log("speech Recongintion error",event.error)
         this.response = "Error recongnizing speech Try again."
+        this.isDisable = false
         this.isListening = false
       }
 
       this.recognition.onend = () => {
         this.ngZone.run(() => {  // ✅ Ensure UI updates
+          this.isDisable = window.speechSynthesis.speaking ? true : false
           this.isListening = false
           this.response ==  "Listening...." ? this.response = "" : this.response = this.response
         })
@@ -76,9 +80,11 @@ export class AppComponent {
       return;
     }
     console.log(this.command)
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     // this.http.post<{ response: string }>(`http://localhost:8000/process_command`, {
       this.http.post<{ response: string }>(`${this.FLASK_API_URL}/process_command`, {
-      command: this.command
+      command: this.command,
+      timezone: userTimezone
     }).subscribe(
       (res) => {this.ngZone.run(() => {  // ✅ Ensure UI updates
         this.setresponse(res);
@@ -95,7 +101,7 @@ export class AppComponent {
 setresponse(res:any){
   if(res.response && res.response['success']){
     window.open(res.response.url,'_blank')
-    this.response =`Searching for ${res.response.searchText} on Google`
+    this.response =`Searching for ${res.response.searchText} on google`
     this.speakResponse(this.response); 
      
   }else{
@@ -107,7 +113,10 @@ setresponse(res:any){
 }
 
 speakResponse(text: string) {
-  this.isListening = true
+  this.ngZone.run(() => {  // ✅ Ensure UI updates
+    this.isDisable = true
+  })
+
   if ('speechSynthesis' in window) {
     const speech = new SpeechSynthesisUtterance(text);
     speech.lang = 'en-US';  // ✅ Set language (change as needed)
@@ -118,7 +127,7 @@ speakResponse(text: string) {
     window.speechSynthesis.speak(speech);
     speech.onend = () => {
       this.ngZone.run(() => {  // ✅ Ensure UI updates
-        this.isListening = false
+        this.isDisable = false
       })
       console.log("Speech has finished.");
     };
